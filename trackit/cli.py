@@ -37,7 +37,13 @@ def parse_args():
 
     checkout_parser = commands.add_parser('checkout')
     checkout_parser.set_defaults(func = checkout)
-    checkout_parser.add_argument('o_id')
+    checkout_parser.add_argument('o_id', nargs='?')
+    checkout_parser.add_argument('-t', '--tag', required=False)
+
+    tag_parser = commands.add_parser('tag')
+    tag_parser.set_defaults(func = tag)
+    tag_parser.add_argument('tag_name')
+    tag_parser.add_argument('o_id', nargs='?')
 
     return parser.parse_args()
 
@@ -54,7 +60,16 @@ def log_(args):
     base.log_(args.o_id)
 
 def checkout(args):
-    base.checkout(args.o_id)
+    if args.o_id is None:
+        if args.tag:
+            base.checkout(tag_name = args.tag)
+            return
+        else:
+            args.o_id = data.get_head()
+    base.checkout(o_id = args.o_id)
+
+def tag(args):
+    base.tag(args.tag_name, args.o_id)
 
 def hash_object(arg):   # this is used to store the object and reference it with an o_id
     with open(arg.obj, 'rb') as f:

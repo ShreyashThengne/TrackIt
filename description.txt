@@ -34,3 +34,5 @@ read_tree: implemented a system which would help us to move to any other branch.
 
 Also implemented commit, which would create an object of type commit with details such as tree id, author, time and message
 implementated log. Also added the support for printing after a particular commit
+
+Added the support for tags

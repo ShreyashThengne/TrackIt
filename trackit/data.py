@@ -7,7 +7,10 @@ GIT_DIR = ".trackit"
 def init():
     os.makedirs(GIT_DIR, exist_ok=True)
     os.makedirs(f"{GIT_DIR}\objects", exist_ok=True)
-
+    os.makedirs(f"{GIT_DIR}\\refs", exist_ok=True)
+    os.makedirs(f"{GIT_DIR}\\refs\heads", exist_ok=True)
+    os.makedirs(f"{GIT_DIR}\\refs\\tags", exist_ok=True)
+    
 def hash_object(content, obj_type="blob"):
     '''
     hash the object content and store it in the .trackit/objects
@@ -57,14 +60,21 @@ def get_object(o_id, expected = 'blob'):
         print(f"Object {o_id} not found.")
         return None
     
-def set_head(o_id):
-    with open(os.path.join(GIT_DIR, 'HEAD'), 'w') as f:
+def set_ref(ref, o_id):
+    with open(os.path.join(GIT_DIR, ref), 'w') as f:
         f.write(o_id)
 
-def get_head():
-    path = os.path.join(GIT_DIR, 'HEAD')
+def get_ref(ref):
+    path = os.path.join(GIT_DIR, ref)
     try:
         with open(path, 'r') as f:
             return f.read()
     except FileNotFoundError:
         return None
+    
+# def get_tag_id(tag_name):
+#     try:
+#         with open(os.path.join(GIT_DIR, 'refs', 'tags', tag_name), 'r') as f:
+#             return f.read()
+#     except FileNotFoundError:
+#         return None

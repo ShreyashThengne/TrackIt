@@ -5,15 +5,25 @@ import os, shutil
 import zlib
 import datetime
 
-def checkout(o_id):
+
+def tag(tag_name, o_id):
+    data.set_ref(f'refs\\tags\{tag_name}', o_id)
+
+def checkout(tag_name = None, o_id = None):
+    if tag_name:
+        o_id = data.get_ref(f'refs\\tags\\{tag_name}')
+        if not o_id:
+            print("This tag doesn't point to any commit!")
+            return
+    
     c = get_commit(o_id)
     read_tree(c.tree)
-    data.set_head(o_id)
+    data.set_ref('HEAD', o_id)
 
 def log_(o_id = None):
     # if not o_id:
     if o_id is None:
-        o_id = data.get_head()
+        o_id = data.get_ref('HEAD')
     commit = data.get_object(o_id, expected='commit').decode().split("\n")
     entries = []
 
@@ -24,7 +34,7 @@ def log_(o_id = None):
     print("\n".join(commit), "\n")
 
 class Commit:
-    def __init__(self, tree, author, time, msg, parent = None):
+    def __init__(self, tree, author, time, msg, parent = None, tag = None):
         self.tree = tree
         self.parent = parent
         self.author = author
@@ -34,7 +44,7 @@ class Commit:
 def commit(msg = "No message left"):
     commit = f"tree {write_tree()}\n"
 
-    head = data.get_head()                                  # retrieve the parent commit of this
+    head = data.get_ref('HEAD')                                  # retrieve the parent commit of this
     if head:
         print(head)
         commit += f"parent {head}\n"                        # attach the parent head to the commit
@@ -42,7 +52,7 @@ def commit(msg = "No message left"):
     commit += f"author x\ntime {datetime.datetime.now()}\nmessage {msg}"
 
     o_id = data.hash_object(commit.encode(), 'commit')      # generate the o_id for this commit
-    data.set_head(o_id)                                     # set the current commit as the head, as this is the latest commit
+    data.set_ref('HEAD', o_id)                                     # set the current commit as the head, as this is the latest commit
 
     # now this has become like a linked list, with links as parent_o_id
     return o_id
