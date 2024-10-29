@@ -3,14 +3,78 @@
 from . import data
 import os, shutil
 import zlib
+import datetime
+
+def checkout(o_id):
+    c = get_commit(o_id)
+    read_tree(c.tree)
+    data.set_head(o_id)
+
+def log_(o_id = None):
+    # if not o_id:
+    if o_id is None:
+        o_id = data.get_head()
+    commit = data.get_object(o_id, expected='commit').decode().split("\n")
+    entries = []
+
+    while len(commit) > 4:
+        parent_o_id = commit[1]
+        print("\n".join(commit), "\n")
+        commit = data.get_object(parent_o_id.split(" ")[1], 'commit').decode().split("\n")
+    print("\n".join(commit), "\n")
+
+class Commit:
+    def __init__(self, tree, author, time, msg, parent = None):
+        self.tree = tree
+        self.parent = parent
+        self.author = author
+        self.time = time
+        self.msg = msg
+
+def commit(msg = "No message left"):
+    commit = f"tree {write_tree()}\n"
+
+    head = data.get_head()                                  # retrieve the parent commit of this
+    if head:
+        print(head)
+        commit += f"parent {head}\n"                        # attach the parent head to the commit
+
+    commit += f"author x\ntime {datetime.datetime.now()}\nmessage {msg}"
+
+    o_id = data.hash_object(commit.encode(), 'commit')      # generate the o_id for this commit
+    data.set_head(o_id)                                     # set the current commit as the head, as this is the latest commit
+
+    # now this has become like a linked list, with links as parent_o_id
+    return o_id
+
+def get_commit(o_id):
+    commit = data.get_object(o_id, 'commit').decode().splitlines()
+    entries = []
+    if len(commit) > 4:
+        return Commit(
+            commit[0].split(" ", 1)[1],
+            commit[2].split(" ", 1)[1],
+            commit[3].split(" ", 1)[1],
+            commit[4].split(" ", 1)[1],
+            commit[1].split(" ", 1)[1]
+        )
+    
+    return Commit(
+        commit[0].split(" ", 1)[1],
+        commit[1].split(" ", 1)[1],
+        commit[2].split(" ", 1)[1],
+        commit[3].split(" ", 1)[1]
+    )
+
+
 
 def write_tree(directory = "."):
     # at the end you simply want to get the object id of this directory
     entries = []
-    ignore = []
+    ignore = set()
     if os.path.exists(".trackitignore"):
         with open(".trackitignore", 'r') as f:
-            ignore = f.read().split("\n")
+            ignore = set(f.read().split("\n"))
 
     with os.scandir(directory) as itr:
         for i in itr:
@@ -20,7 +84,7 @@ def write_tree(directory = "."):
 
             if i.is_dir(follow_symlinks=False):
                 object_type = 'tree'
-                o_id = write_tree(curr)   #this is a recursive algo for getting the o_id of the this dir
+                o_id = write_tree(curr)                     # this is a recursive algo for getting the o_id of the this dir
             else:
                 object_type = 'blob'
                 with open(curr, 'rb') as f:
@@ -38,20 +102,19 @@ def read_tree(o_id, base_path = '.'):
 
     with open(obj_path, 'rb') as f:
         r = f.read()
-        
-    header, content = zlib.decompress(r).split(b'\0', 1)
-    header = header.decode()
+
+    content = zlib.decompress(r).split(b'\0', 1)[1]
     content = content.decode()
 
-    del_list = {i:1 for i in os.listdir(base_path)}
-    if base_path == '.':
-        del_list.pop('.trackit')
+    del_list = {i:1 for i in os.listdir(base_path) if i != '.trackit'}
 
-    if os.path.exists(".trackitignore"):
+    # if os.path.exists(".trackitignore"):
+    try:
         with open(".trackitignore", 'r') as f:
-            ignore = f.read().split("\n")
+            ignore = f.readlines()
         for i in ignore:
             del_list.pop(i, None)
+    except FileNotFoundError: pass
     
     for item in content.split("\n"):
         if not item: continue
@@ -65,8 +128,10 @@ def read_tree(o_id, base_path = '.'):
 
 
         if item_type == 'tree':
-            if not os.path.exists(curr_path):
+            print(curr_path)
+            try:
                 os.mkdir(curr_path)
+            except: pass
             read_tree(o_id, base_path = curr_path)
         else:
             with open(curr_path, 'w') as f:
