@@ -27,7 +27,7 @@ def write_tree(directory = "."):
                     o_id = data.hash_object(f.read())
 
             entries.append((object_type, o_id, i.name))
-    entries.sort()
+
     tree = "".join(f"{object_type} {oid} {name}\n" for object_type, oid, name in entries)
     
     return data.hash_object(tree.encode(), 'tree')
@@ -44,6 +44,9 @@ def read_tree(o_id, base_path = '.'):
     content = content.decode()
 
     del_list = {i:1 for i in os.listdir(base_path)}
+    if base_path == '.':
+        del_list.pop('.trackit')
+
     if os.path.exists(".trackitignore"):
         with open(".trackitignore", 'r') as f:
             ignore = f.read().split("\n")
@@ -53,24 +56,25 @@ def read_tree(o_id, base_path = '.'):
     for item in content.split("\n"):
         if not item: continue
         item_type, o_id, name = item.split(" ", 2)
+        curr_path = os.path.join(base_path, name)
 
         try:
             del_list.pop(name)
-        except ValueError:
+        except KeyError:
             pass
 
+
         if item_type == 'tree':
-            read_tree(o_id, base_path = os.path.join(base_path, name))
+            if not os.path.exists(curr_path):
+                os.mkdir(curr_path)
+            read_tree(o_id, base_path = curr_path)
         else:
-            try:
-                with open(os.path.join(base_path, name), 'w') as f:
-                    f.write(data.get_object(o_id).decode())
-            except FileNotFoundError:
-                print("File not found!")
-    
-        for item in del_list:
-            p = os.path.join(base_path, item)
-            if os.path.isfile(p):
-                os.remove(p)
-            else:
-                shutil.rmtree(p)
+            with open(curr_path, 'w') as f:
+                f.write(data.get_object(o_id).decode())
+
+    for i in del_list:
+        p = os.path.join(base_path, i)
+        if os.path.isfile(p):
+            os.remove(p)
+        else:
+            shutil.rmtree(p)
