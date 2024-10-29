@@ -1,0 +1,16 @@
+commands:
+trackit init
+trackit hash_file
+trackit cat_file
+trackit write_tree
+
+For hashing: The file is converted into binary and then header is added, which includes file type and file storage size. The hash is found using sha1.
+Also, the headed file is compressed using zlib
+If using cat_file without mentioning any id, then we would get all the files present in the hash
+
+Tree: We have build a tree as well. This would contain type, oid, name in this sequence. Also, a tree can contain another tree as well, i.e. we can have a dir inside another.
+We use recursion for that. At last writ_tree would return an oid for curr tree
+
+Also added the suport for .trackitignore, which is similar to .gitignore
+
+write_tree: This command would create a tree branch. Whose o_id has to saved somewhere and can be used to get back to that version of the files.

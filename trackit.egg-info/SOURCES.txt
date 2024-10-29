@@ -1,0 +1,9 @@
+setup.py
+trackit/base.py
+trackit/cli.py
+trackit/data.py
+trackit.egg-info/PKG-INFO
+trackit.egg-info/SOURCES.txt
+trackit.egg-info/dependency_links.txt
+trackit.egg-info/entry_points.txt
+trackit.egg-info/top_level.txt
