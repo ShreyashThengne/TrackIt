@@ -75,8 +75,8 @@ def get_ref(ref):
 
     if ref == 'HEAD':
         with open(path, 'r') as f:
-            path = f.read()
-
+            path = os.path.join(GIT_DIR, f.read())
+    
     try:
         with open(path, 'r') as f:
             return f.read()
@@ -85,9 +85,9 @@ def get_ref(ref):
 
 def iter_refs():
     refs = ['HEAD']
-
+    # print('uhjwds',os.path.join(GIT_DIR, 'refs'))
     for root, dirs, files in os.walk(os.path.join(GIT_DIR, 'refs')):
-        root = os.path.relpath(root, GIT_DIR)                           # this is done in order to remove GIT_DIR part from the path
+        root = os.path.relpath(root, GIT_DIR)                   # this is done in order to remove GIT_DIR part from the path
         refs.extend([os.path.join(root, i) for i in files])
     
     for ref in refs:

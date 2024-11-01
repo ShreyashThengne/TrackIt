@@ -40,7 +40,7 @@ def parse_args():
     checkout_parser = commands.add_parser('checkout')
     checkout_parser.set_defaults(func = checkout)
     checkout_parser.add_argument('o_id', nargs='?')
-    checkout_parser.add_argument('-t', '--tag', required=False)
+    checkout_parser.add_argument('-r', '--ref', required=False)
 
     tag_parser = commands.add_parser('tag')
     tag_parser.set_defaults(func = tag)
@@ -48,9 +48,10 @@ def parse_args():
     tag_parser.add_argument('o_id', nargs='?')
 
     k_parser = commands.add_parser ('k')
-    k_parser.set_defaults (func=k)
+    k_parser.set_defaults(func=k)
 
     branch_parser = commands.add_parser('branch')
+    branch_parser.set_defaults(func=branch)
     branch_parser.add_argument('name')
     branch_parser.add_argument('o_id', nargs='?')
 
@@ -70,8 +71,8 @@ def log_(args):
 
 def checkout(args):
     if args.o_id is None:
-        if args.tag:
-            base.checkout(tag_name = args.tag)
+        if args.ref:
+            base.checkout(ref_name = args.ref)
             return
         else:
             args.o_id = data.get_ref('HEAD')
@@ -94,8 +95,9 @@ def k(args):
             print('Parent', commit.parent, "\n")
 
 def branch(args):
-    if not o_id:
-        o_id = data.get_ref('HEAD')   # jugaad, you get branch ref from Head
+    if not args.o_id:
+        args.o_id = data.get_ref('HEAD')
+
     base.branch(args.name, args.o_id)
 
 def hash_object(arg):   # this is used to store the object and reference it with an o_id

@@ -6,7 +6,7 @@ import zlib
 import datetime
 import collections
 
-def iter_commits_and_parents (oids):
+def iter_commits_and_parents(oids):
     oids = collections.deque(oids)
     visited = set()
 
@@ -36,17 +36,25 @@ def iter_commits_and_parents (oids):
 def tag(tag_name, o_id):
     data.set_ref(f'refs\\tags\{tag_name}', o_id)
 
-def checkout(tag_name = None, o_id = None):
-    if tag_name:
-        o_id = data.get_ref(f'refs\\tags\\{tag_name}')
+def checkout(ref_name = None, o_id = None):
+    if ref_name:
+        for ref, id in data.iter_refs():
+            if os.path.split(ref)[-1] == ref_name:
+                print(id)
+                o_id = id
+                data.set_ref('HEAD', ref)
+                
+                branch = data.get_ref('HEAD')
+                data.set_ref(branch, o_id)
+                break
+
         if not o_id:
             print("This tag doesn't point to any commit!")
             return
+        
     c = get_commit(o_id)
     read_tree(c.tree)
 
-    branch = data.get_ref('HEAD')
-    data.set_ref(branch, o_id)
 
 def branch(name, o_id):
     data.set_ref(os.path.join('refs', 'heads', name), o_id)
@@ -95,6 +103,7 @@ def commit(msg = "No message left"):
     o_id = data.hash_object(commit.encode(), 'commit')          # generate the o_id for this commit
     
     branch = data.get_head_branch()
+    print(f"[{os.path.split(branch)[-1]}] {msg}")
     data.set_ref(branch, o_id)                                  # set the current commit as the head, as this is the latest commit
 
     # now this has become like a linked list, with links as parent_o_id
