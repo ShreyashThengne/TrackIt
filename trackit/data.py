@@ -62,6 +62,13 @@ def get_object(o_id, expected = 'blob'):
         print(f"Object {o_id} not found.")
         return None
     
+def set_head(ref = None, o_id = None):
+    with open(os.path.join(GIT_DIR, 'HEAD'), 'w') as f:
+        if ref:
+            f.write(f"ref: {ref}")
+        else:
+            f.write(f"commit: {o_id}")
+
 def set_ref(ref, o_id):
     with open(os.path.join(GIT_DIR, ref), 'w') as f:
         f.write(o_id)
@@ -75,7 +82,10 @@ def get_ref(ref):
 
     if ref == 'HEAD':
         with open(path, 'r') as f:
-            path = os.path.join(GIT_DIR, f.read())
+            r = f.read().split(" ")
+            if r[0] == 'commit':
+                return r[1]
+            path = os.path.join(GIT_DIR, r[1])
     
     try:
         with open(path, 'r') as f:

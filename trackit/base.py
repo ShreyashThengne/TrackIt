@@ -34,27 +34,32 @@ def iter_commits_and_parents(oids):
         
 
 def tag(tag_name, o_id):
-    data.set_ref(f'refs\\tags\{tag_name}', o_id)
+    data.set_ref(os.path.join('refs', 'tags', tag_name), o_id)
+    # branch = data.get_ref('HEAD')
+    # data.set_ref(branch, o_id)
 
 def checkout(ref_name = None, o_id = None):
     if ref_name:
         for ref, id in data.iter_refs():
             if os.path.split(ref)[-1] == ref_name:
-                print(id)
                 o_id = id
-                data.set_ref('HEAD', ref)
-                
-                branch = data.get_ref('HEAD')
-                data.set_ref(branch, o_id)
-                break
+                if ref.split("\\")[1] == 'heads':
+                    data.set_head(ref = ref)
+                else:
+                    data.set_head(o_id = o_id)
+                try:
+                    c = get_commit(o_id)
+                    read_tree(c.tree)
+                except: print("Invalid reference")
+                return
 
         if not o_id:
             print("This tag doesn't point to any commit!")
             return
-        
+
     c = get_commit(o_id)
     read_tree(c.tree)
-
+    data.set_head(o_id = o_id)
 
 def branch(name, o_id):
     data.set_ref(os.path.join('refs', 'heads', name), o_id)
