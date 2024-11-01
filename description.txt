@@ -36,3 +36,4 @@ Also implemented commit, which would create an object of type commit with detail
 implementated log. Also added the support for printing after a particular commit
 
 Added the support for tags
+added supoprt for references

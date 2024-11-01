@@ -4,7 +4,34 @@ from . import data
 import os, shutil
 import zlib
 import datetime
+import collections
 
+def iter_commits_and_parents (oids):
+    oids = collections.deque(oids)
+    visited = set()
+
+    while oids:
+        oid = oids.popleft()
+        if not oid or oid in visited:
+            continue
+        visited.add(oid)
+        yield oid
+
+        commit = get_commit(oid)
+        oids.appendleft(commit.parent)
+
+
+# def iter_commits_and_parents(o_id):
+#     commit = get_commit(o_id)
+#     p = commit.parent
+#     parents = []
+    
+#     while p:
+#         parents.append(p)
+#         commit = get_commit(p)
+#         p = commit.parent
+#     return parents
+        
 
 def tag(tag_name, o_id):
     data.set_ref(f'refs\\tags\{tag_name}', o_id)
@@ -15,23 +42,38 @@ def checkout(tag_name = None, o_id = None):
         if not o_id:
             print("This tag doesn't point to any commit!")
             return
-    
     c = get_commit(o_id)
     read_tree(c.tree)
-    data.set_ref('HEAD', o_id)
 
-def log_(o_id = None):
-    # if not o_id:
+    branch = data.get_ref('HEAD')
+    data.set_ref(branch, o_id)
+
+def branch(name, o_id):
+    data.set_ref(os.path.join('refs', 'heads', name), o_id)
+
+def log_(o_id = None, ref_name = None):
     if o_id is None:
-        o_id = data.get_ref('HEAD')
+        if ref_name:
+            o_id = data.get_ref(f'refs\\tags\\{ref_name}')
+            if o_id is None:
+                o_id = data.get_ref(f'refs\\heads\\{ref_name}')
+            
+            if o_id is None:
+                print("This reference doesn't exist!")
+                return
+        else:
+            o_id = data.get_ref('HEAD')
     commit = data.get_object(o_id, expected='commit').decode().split("\n")
     entries = []
 
     while len(commit) > 4:
-        parent_o_id = commit[1]
-        print("\n".join(commit), "\n")
-        commit = data.get_object(parent_o_id.split(" ")[1], 'commit').decode().split("\n")
-    print("\n".join(commit), "\n")
+        parent_o_id = commit[1].split(' ')[1]
+        print(f"commit {o_id}\n" + "\n".join(commit), "\n")
+
+        commit = data.get_object(parent_o_id, 'commit').decode().split("\n")
+        o_id = parent_o_id
+    print(f"commit {o_id}\n" + "\n".join(commit), "\n")
+
 
 class Commit:
     def __init__(self, tree, author, time, msg, parent = None, tag = None):
@@ -44,22 +86,23 @@ class Commit:
 def commit(msg = "No message left"):
     commit = f"tree {write_tree()}\n"
 
-    head = data.get_ref('HEAD')                                  # retrieve the parent commit of this
+    head = data.get_ref('HEAD')                                 # retrieve the parent commit of this
     if head:
-        print(head)
-        commit += f"parent {head}\n"                        # attach the parent head to the commit
+        commit += f"parent {head}\n"                            # attach the parent head to the commit
 
     commit += f"author x\ntime {datetime.datetime.now()}\nmessage {msg}"
 
-    o_id = data.hash_object(commit.encode(), 'commit')      # generate the o_id for this commit
-    data.set_ref('HEAD', o_id)                                     # set the current commit as the head, as this is the latest commit
+    o_id = data.hash_object(commit.encode(), 'commit')          # generate the o_id for this commit
+    
+    branch = data.get_head_branch()
+    data.set_ref(branch, o_id)                                  # set the current commit as the head, as this is the latest commit
 
     # now this has become like a linked list, with links as parent_o_id
     return o_id
 
 def get_commit(o_id):
     commit = data.get_object(o_id, 'commit').decode().splitlines()
-    entries = []
+
     if len(commit) > 4:
         return Commit(
             commit[0].split(" ", 1)[1],
@@ -75,7 +118,6 @@ def get_commit(o_id):
         commit[2].split(" ", 1)[1],
         commit[3].split(" ", 1)[1]
     )
-
 
 
 def write_tree(directory = "."):
@@ -105,7 +147,6 @@ def write_tree(directory = "."):
     tree = "".join(f"{object_type} {oid} {name}\n" for object_type, oid, name in entries)
     
     return data.hash_object(tree.encode(), 'tree')
-    
 
 def read_tree(o_id, base_path = '.'):
     obj_path = os.path.join(data.GIT_DIR, 'objects', o_id[:2], o_id[2:])
@@ -138,7 +179,6 @@ def read_tree(o_id, base_path = '.'):
 
 
         if item_type == 'tree':
-            print(curr_path)
             try:
                 os.mkdir(curr_path)
             except: pass

@@ -4,6 +4,7 @@ from . import base
 import os, sys
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     commands = parser.add_subparsers(dest='cmd')
@@ -34,6 +35,7 @@ def parse_args():
     log_parser = commands.add_parser('log')
     log_parser.set_defaults(func = log_)
     log_parser.add_argument('o_id', nargs='?')
+    log_parser.add_argument('-r', '--ref', required=False)
 
     checkout_parser = commands.add_parser('checkout')
     checkout_parser.set_defaults(func = checkout)
@@ -44,6 +46,13 @@ def parse_args():
     tag_parser.set_defaults(func = tag)
     tag_parser.add_argument('tag_name')
     tag_parser.add_argument('o_id', nargs='?')
+
+    k_parser = commands.add_parser ('k')
+    k_parser.set_defaults (func=k)
+
+    branch_parser = commands.add_parser('branch')
+    branch_parser.add_argument('name')
+    branch_parser.add_argument('o_id', nargs='?')
 
     return parser.parse_args()
 
@@ -57,7 +66,7 @@ def commit(arg):
     print(base.commit(arg.message))
 
 def log_(args):
-    base.log_(args.o_id)
+    base.log_(args.o_id, args.ref)      # this ref can be either head or tag
 
 def checkout(args):
     if args.o_id is None:
@@ -65,11 +74,29 @@ def checkout(args):
             base.checkout(tag_name = args.tag)
             return
         else:
-            args.o_id = data.get_head()
+            args.o_id = data.get_ref('HEAD')
     base.checkout(o_id = args.o_id)
 
 def tag(args):
     base.tag(args.tag_name, args.o_id)
+
+def k(args):
+    oids = set()
+    for refname, ref in data.iter_refs():
+        print(refname, ref)
+        oids.add(ref)
+    print()
+
+    for oid in base.iter_commits_and_parents(oids):
+        commit = base.get_commit(oid)
+        print("h", oid)
+        if commit.parent:
+            print('Parent', commit.parent, "\n")
+
+def branch(args):
+    if not o_id:
+        o_id = data.get_ref('HEAD')   # jugaad, you get branch ref from Head
+    base.branch(args.name, args.o_id)
 
 def hash_object(arg):   # this is used to store the object and reference it with an o_id
     with open(arg.obj, 'rb') as f:

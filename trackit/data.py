@@ -10,6 +10,7 @@ def init():
     os.makedirs(f"{GIT_DIR}\\refs", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs\heads", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs\\tags", exist_ok=True)
+    set_ref('HEAD', 'refs\heads\main')
     
 def hash_object(content, obj_type="blob"):
     '''
@@ -44,6 +45,7 @@ def get_object(o_id, expected = 'blob'):
         # now we decode the header to original format
 
         obj_path = os.path.join(GIT_DIR, 'objects', o_id[:2], o_id[2:])
+        # print(obj_path)
         with open(obj_path, 'rb') as f:
             r = f.read()
         
@@ -64,17 +66,29 @@ def set_ref(ref, o_id):
     with open(os.path.join(GIT_DIR, ref), 'w') as f:
         f.write(o_id)
 
+def get_head_branch():
+    with open(os.path.join(GIT_DIR, 'HEAD'), 'r') as f:
+        return f.read()
+
 def get_ref(ref):
     path = os.path.join(GIT_DIR, ref)
+
+    if ref == 'HEAD':
+        with open(path, 'r') as f:
+            path = f.read()
+
     try:
         with open(path, 'r') as f:
             return f.read()
     except FileNotFoundError:
         return None
+
+def iter_refs():
+    refs = ['HEAD']
+
+    for root, dirs, files in os.walk(os.path.join(GIT_DIR, 'refs')):
+        root = os.path.relpath(root, GIT_DIR)                           # this is done in order to remove GIT_DIR part from the path
+        refs.extend([os.path.join(root, i) for i in files])
     
-# def get_tag_id(tag_name):
-#     try:
-#         with open(os.path.join(GIT_DIR, 'refs', 'tags', tag_name), 'r') as f:
-#             return f.read()
-#     except FileNotFoundError:
-#         return None
+    for ref in refs:
+        yield ref, get_ref(ref)
