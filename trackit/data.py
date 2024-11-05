@@ -10,7 +10,7 @@ def init():
     os.makedirs(f"{GIT_DIR}\\refs", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs\heads", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs\\tags", exist_ok=True)
-    set_ref('HEAD', 'refs\heads\main')
+    set_head(ref = 'refs\heads\main')
     
 def hash_object(content, obj_type="blob"):
     '''
@@ -75,7 +75,7 @@ def set_ref(ref, o_id):
 
 def get_head_branch():
     with open(os.path.join(GIT_DIR, 'HEAD'), 'r') as f:
-        return f.read()
+        return f.read().split(" ")[1]
 
 def get_ref(ref):
     path = os.path.join(GIT_DIR, ref)
@@ -83,7 +83,7 @@ def get_ref(ref):
     if ref == 'HEAD':
         with open(path, 'r') as f:
             r = f.read().split(" ")
-            if r[0] == 'commit':
+            if r[0] == 'commit:':
                 return r[1]
             path = os.path.join(GIT_DIR, r[1])
     
@@ -102,3 +102,10 @@ def iter_refs():
     
     for ref in refs:
         yield ref, get_ref(ref)
+
+def check_symbolic():
+    with open(os.path.join(GIT_DIR, 'HEAD'), 'r') as f:
+        r = f.read()
+        if r.split(" ")[0] == 'commit:':
+            return False
+        return True

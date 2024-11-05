@@ -38,3 +38,6 @@ implementated log. Also added the support for printing after a particular commit
 Added the support for tags
 added supoprt for references
 added suport for branching
+
+TODO:
+**************implement status**************

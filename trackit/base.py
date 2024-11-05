@@ -20,6 +20,28 @@ def iter_commits_and_parents(oids):
         commit = get_commit(oid)
         oids.appendleft(commit.parent)
 
+def status():
+    if data.check_symbolic():
+        print(f"On branch {os.path.split(data.get_head_branch())[1]}")
+    else:
+        print(f"HEAD detached at {data.get_ref('HEAD')}")
+
+def reset(o_id):
+    if data.check_symbolic():
+        data.set_ref(data.get_head_branch(), o_id)
+    else:
+        data.set_head(o_id=o_id)
+
+def get_all_branches():
+    head = None
+    if data.check_symbolic():
+        head = os.path.split(data.get_head_branch())[-1]
+
+    for branch in os.listdir(os.path.join(data.GIT_DIR, 'refs', 'heads')):
+        if head and branch == head:
+            print("* " + branch)
+        else:
+            print("  " + branch)
 
 # def iter_commits_and_parents(o_id):
 #     commit = get_commit(o_id)
@@ -31,12 +53,10 @@ def iter_commits_and_parents(oids):
 #         commit = get_commit(p)
 #         p = commit.parent
 #     return parents
-        
+
 
 def tag(tag_name, o_id):
     data.set_ref(os.path.join('refs', 'tags', tag_name), o_id)
-    # branch = data.get_ref('HEAD')
-    # data.set_ref(branch, o_id)
 
 def checkout(ref_name = None, o_id = None):
     if ref_name:
@@ -47,9 +67,10 @@ def checkout(ref_name = None, o_id = None):
                     data.set_head(ref = ref)
                 else:
                     data.set_head(o_id = o_id)
+
                 try:
                     c = get_commit(o_id)
-                    read_tree(c.tree)
+                    read_snapshot(c.tree)
                 except: print("Invalid reference")
                 return
 
@@ -58,14 +79,14 @@ def checkout(ref_name = None, o_id = None):
             return
 
     c = get_commit(o_id)
-    read_tree(c.tree)
+    read_snapshot(c.tree)
     data.set_head(o_id = o_id)
 
 def branch(name, o_id):
     data.set_ref(os.path.join('refs', 'heads', name), o_id)
 
 def log_(o_id = None, ref_name = None):
-    if o_id is None:
+    if not o_id:
         if ref_name:
             o_id = data.get_ref(f'refs\\tags\\{ref_name}')
             if o_id is None:
@@ -77,10 +98,14 @@ def log_(o_id = None, ref_name = None):
         else:
             o_id = data.get_ref('HEAD')
     commit = data.get_object(o_id, expected='commit').decode().split("\n")
-    entries = []
-
+    
+    refs = {}
+    for refname, refv in data.iter_refs():
+        refs.setdefault(refv, []).append(os.path.split(refname)[-1])
     while len(commit) > 4:
         parent_o_id = commit[1].split(' ')[1]
+        if refs.get(o_id):
+            print(", ".join(refs[o_id]))
         print(f"commit {o_id}\n" + "\n".join(commit), "\n")
 
         commit = data.get_object(parent_o_id, 'commit').decode().split("\n")
@@ -97,7 +122,7 @@ class Commit:
         self.msg = msg
 
 def commit(msg = "No message left"):
-    commit = f"tree {write_tree()}\n"
+    commit = f"tree {snapshot()}\n"
 
     head = data.get_ref('HEAD')                                 # retrieve the parent commit of this
     if head:
@@ -108,6 +133,7 @@ def commit(msg = "No message left"):
     o_id = data.hash_object(commit.encode(), 'commit')          # generate the o_id for this commit
     
     branch = data.get_head_branch()
+
     print(f"[{os.path.split(branch)[-1]}] {msg}")
     data.set_ref(branch, o_id)                                  # set the current commit as the head, as this is the latest commit
 
@@ -134,7 +160,7 @@ def get_commit(o_id):
     )
 
 
-def write_tree(directory = "."):
+def snapshot(directory = "."):
     # at the end you simply want to get the object id of this directory
     entries = []
     ignore = set()
@@ -150,7 +176,7 @@ def write_tree(directory = "."):
 
             if i.is_dir(follow_symlinks=False):
                 object_type = 'tree'
-                o_id = write_tree(curr)                     # this is a recursive algo for getting the o_id of the this dir
+                o_id = snapshot(curr)                     # this is a recursive algo for getting the o_id of the this dir
             else:
                 object_type = 'blob'
                 with open(curr, 'rb') as f:
@@ -162,7 +188,7 @@ def write_tree(directory = "."):
     
     return data.hash_object(tree.encode(), 'tree')
 
-def read_tree(o_id, base_path = '.'):
+def read_snapshot(o_id, base_path = '.'):
     obj_path = os.path.join(data.GIT_DIR, 'objects', o_id[:2], o_id[2:])
 
     with open(obj_path, 'rb') as f:
@@ -196,7 +222,7 @@ def read_tree(o_id, base_path = '.'):
             try:
                 os.mkdir(curr_path)
             except: pass
-            read_tree(o_id, base_path = curr_path)
+            read_snapshot(o_id, base_path = curr_path)
         else:
             with open(curr_path, 'w') as f:
                 f.write(data.get_object(o_id).decode())

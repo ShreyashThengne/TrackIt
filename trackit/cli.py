@@ -17,15 +17,15 @@ def parse_args():
     hash_file_parser.set_defaults(func = hash_object)
     hash_file_parser.add_argument('obj')
 
-    cat_file_parser = commands.add_parser('cat_file')
-    cat_file_parser.set_defaults(func = cat_object)
+    cat_file_parser = commands.add_parser('read_file')
+    cat_file_parser.set_defaults(func = read_object)
     cat_file_parser.add_argument('obj')     # extra arg to be stored in obj variable
 
-    write_tree_parser = commands.add_parser('write_tree')
-    write_tree_parser.set_defaults(func = write_tree)
+    write_tree_parser = commands.add_parser('snapshot')
+    write_tree_parser.set_defaults(func = snapshot)
 
-    read_tree_parser = commands.add_parser('read_tree')
-    read_tree_parser.set_defaults(func = read_tree)
+    read_tree_parser = commands.add_parser('read-snapshot')
+    read_tree_parser.set_defaults(func = read_snapshot)
     read_tree_parser.add_argument('tree')
 
     commit_parser = commands.add_parser('commit')
@@ -47,21 +47,29 @@ def parse_args():
     tag_parser.add_argument('tag_name')
     tag_parser.add_argument('o_id', nargs='?')
 
-    k_parser = commands.add_parser ('k')
-    k_parser.set_defaults(func=k)
+    k_parser = commands.add_parser ('status')
+    k_parser.set_defaults(func=status)
 
     branch_parser = commands.add_parser('branch')
     branch_parser.set_defaults(func=branch)
-    branch_parser.add_argument('name')
+    branch_parser.add_argument('name', nargs='?')
     branch_parser.add_argument('o_id', nargs='?')
+
+    reset_parser = commands.add_parser("reset")
+    reset_parser.set_defaults(func = reset)
+    reset_parser.add_argument("o_id")
+
+    show_parser = commands.add_parser("show")
+    show_parser.set_defaults(func = show)
+    # reset_parser.add_argument("o_id")
 
     return parser.parse_args()
 
-def write_tree(arg):
-    print(base.write_tree())    # this will print o_id of the tree
+def snapshot(arg):
+    print(base.snapshot())    # this will print o_id of the tree
 
-def read_tree(arg):
-    base.read_tree(arg.tree)    # this will restore the repo to a previously stored instance/tree using the given o_id
+def read_snapshot(arg):
+    base.read-snapshot(arg.tree)    # this will restore the repo to a previously stored instance/tree using the given o_id
 
 def commit(arg):
     print(base.commit(arg.message))
@@ -81,24 +89,24 @@ def checkout(args):
 def tag(args):
     base.tag(args.tag_name, args.o_id)
 
-def k(args):
-    oids = set()
-    for refname, ref in data.iter_refs():
-        print(refname, ref)
-        oids.add(ref)
-    print()
-
-    for oid in base.iter_commits_and_parents(oids):
-        commit = base.get_commit(oid)
-        print("h", oid)
-        if commit.parent:
-            print('Parent', commit.parent, "\n")
+def status(args):
+    base.status()
 
 def branch(args):
+    if not args.name and not args.o_id:
+        base.get_all_branches()
+        return
+    
     if not args.o_id:
         args.o_id = data.get_ref('HEAD')
 
     base.branch(args.name, args.o_id)
+
+def reset(args):
+    base.reset(args.o_id)
+
+def show(args):
+    base.show()
 
 def hash_object(arg):   # this is used to store the object and reference it with an o_id
     with open(arg.obj, 'rb') as f:
@@ -106,7 +114,7 @@ def hash_object(arg):   # this is used to store the object and reference it with
     o_id = data.hash_object(content)  # content is in binary form
     print(o_id)
 
-def cat_object(arg):    # this is used to retrieve the object content usign o_id
+def read_object(arg):    # this is used to retrieve the object content usign o_id
     sys.stdout.flush()
     sys.stdout.buffer.write(data.get_object(arg.obj, expected = None))
 
