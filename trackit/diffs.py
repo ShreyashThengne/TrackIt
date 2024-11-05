@@ -25,7 +25,6 @@ def compare_snaps(s1, s2, path = "."):
                         else:
                             objects[sub_name][0] = None
                 continue
-                
 
             name = f"{path}\{o[2]}"
 
@@ -44,22 +43,25 @@ def diff(t, f):
     f = base.get_commit(f)
     t = base.get_commit(t)
     files = compare_snaps(f.tree, t.tree)
-    print(files)
+    # print(files)
 
-    # for filename, o_ids in files.items():
-    #     # print(filename, o_ids)
+    for filename, o_ids in files.items():
+        # print(filename, o_ids)
         
-    #     if o_ids[0] == o_ids[1]: continue
-    #     elif o_ids[0] and not o_ids[1]:
-    #         print(f"{filename} was deleted!")
-    #     elif not o_ids[0] and o_ids[1]:
-    #         print(f"{filename} was added!")
-    #     else:
-    #         # this means the file was modified
-    #         file1 = base.read_snapshot(o_ids[0])
-    #         file2 = base.read_snapshot(o_ids[1])
-    #         print(filename)
-    #         d = difflib.unified_diff(file1, file2)
-    #         for line in d:
-    #             print(line)
+        if o_ids[0] == o_ids[1]: continue
+        elif o_ids[0] and not o_ids[1]:
+            print(f"{filename} was created!")
+        elif not o_ids[0] and o_ids[1]:
+            print(f"{filename} was deleted!")
+        else:
+            # this means the file was modified
+            print("Changes in", filename)
+            file1 = data.get_object(o_ids[0], expected='blob').decode().split("\r")
+            file2 = data.get_object(o_ids[1], expected='blob').decode().split("\r")
+            d = difflib.unified_diff(file2, file1, lineterm='')
+        
+            for line in d:
+                print(line)
+        print()
     
+    return files

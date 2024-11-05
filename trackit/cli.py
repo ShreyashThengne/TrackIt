@@ -117,9 +117,11 @@ def show(args):
 def diff(args):
     if not args.f_o_id:
         c = base.get_commit(args.t_o_id)
+        if not c.parent:
+            print("This commit does not have any parent!")
+            return
         args.f_o_id = c.parent
-        # print(args.t_o_id)
-    print(diffs.diff(args.f_o_id, args.t_o_id))
+    diffs.diff(args.f_o_id, args.t_o_id)
 
 def hash_object(arg):   # this is used to store the object and reference it with an o_id
     with open(arg.obj, 'rb') as f:

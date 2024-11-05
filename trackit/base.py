@@ -1,6 +1,7 @@
 # this will be used for high level implementation using base
 
 from . import data
+from . import diffs
 import os, shutil
 import zlib
 import datetime
@@ -33,10 +34,9 @@ def reset(o_id):
         data.set_head(o_id=o_id)
 
 def show(o_id):
-    cmt = get_commit(o_id).msg
-    print(cmt)
-
-
+    cmt = get_commit(o_id)
+    print(f"commit {o_id}\nauthor: {cmt.author}\ndate: {cmt.time}\nmessage: {cmt.msg}\n")
+    diffs.diff(cmt.parent, o_id)  # from, to
 
 def get_all_branches():
     head = None
