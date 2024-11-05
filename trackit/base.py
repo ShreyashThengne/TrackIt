@@ -32,6 +32,12 @@ def reset(o_id):
     else:
         data.set_head(o_id=o_id)
 
+def show(o_id):
+    cmt = get_commit(o_id).msg
+    print(cmt)
+
+
+
 def get_all_branches():
     head = None
     if data.check_symbolic():

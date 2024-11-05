@@ -1,6 +1,7 @@
 import argparse
 from . import data
 from . import base
+from . import diffs
 import os, sys
 
 
@@ -61,7 +62,12 @@ def parse_args():
 
     show_parser = commands.add_parser("show")
     show_parser.set_defaults(func = show)
-    # reset_parser.add_argument("o_id")
+    show_parser.add_argument("o_id", default=data.get_ref('HEAD'), nargs='?')
+
+    diff_parser = commands.add_parser("diff")
+    diff_parser.set_defaults(func = diff)
+    diff_parser.add_argument("f_o_id", nargs='?')
+    diff_parser.add_argument("t_o_id", default=data.get_ref('HEAD'), nargs='?')
 
     return parser.parse_args()
 
@@ -90,7 +96,7 @@ def tag(args):
     base.tag(args.tag_name, args.o_id)
 
 def status(args):
-    base.status()
+    base.status(args.o_id)
 
 def branch(args):
     if not args.name and not args.o_id:
@@ -106,7 +112,14 @@ def reset(args):
     base.reset(args.o_id)
 
 def show(args):
-    base.show()
+    base.show(args.o_id)
+
+def diff(args):
+    if not args.f_o_id:
+        c = base.get_commit(args.t_o_id)
+        args.f_o_id = c.parent
+        # print(args.t_o_id)
+    print(diffs.diff(args.f_o_id, args.t_o_id))
 
 def hash_object(arg):   # this is used to store the object and reference it with an o_id
     with open(arg.obj, 'rb') as f:
