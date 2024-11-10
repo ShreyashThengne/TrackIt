@@ -39,29 +39,62 @@ def compare_snaps(s1, s2, path = "."):
         
     return objects
 
-def diff(t, f):
+def diff(f, t):
     f = base.get_commit(f)
     t = base.get_commit(t)
     files = compare_snaps(f.tree, t.tree)
-    # print(files)
 
     for filename, o_ids in files.items():
-        # print(filename, o_ids)
         
         if o_ids[0] == o_ids[1]: continue
         elif o_ids[0] and not o_ids[1]:
-            print(f"{filename} was created!")
-        elif not o_ids[0] and o_ids[1]:
             print(f"{filename} was deleted!")
+        elif not o_ids[0] and o_ids[1]:
+            print(f"{filename} was created!")
         else:
             # this means the file was modified
             print("Changes in", filename)
             file1 = data.get_object(o_ids[0], expected='blob').decode().split("\r")
             file2 = data.get_object(o_ids[1], expected='blob').decode().split("\r")
-            d = difflib.unified_diff(file2, file1, lineterm='')
+            print(file1, file2)
+            d = difflib.unified_diff(file1, file2, lineterm='')
         
             for line in d:
                 print(line)
         print()
     
     return files
+
+def merge(f_o_id, t_o_id):
+    f = base.get_commit(f_o_id)     # head file
+    t = base.get_commit(t_o_id)     # branch file which is to be merged into head
+    merged_snap = {}
+    files = compare_snaps(f.tree, t.tree)
+
+    for filename, o_ids in files:
+        pass
+
+def merge_blobs(f, t):
+    f = data.get_object(f, expected='blob').decode().split("\r")
+    t = data.get_object(t, expected='blob').decode().split("\r")
+    
+    d = difflib.unified_diff(f, t, lineterm='')[2:]
+    i = 0
+    while i < len(d):
+        if d[i].startswith('-'):
+            print("<<<<<<< HEAD")
+            while d[i].startswith('-'):
+                print(d[i][1:])
+                i += 1
+            while i < len(d) and d[i].startswith('+'):
+                print(d[i][1:])
+                i += 1
+            print(">>>>>>branch")
+        else:
+            print(d[i][1:])
+
+
+        # if f[i] != t[j]: # \n{t[j]}\n>>>>>>branch
+        #     res += f[i]
+        #     i += 1
+        #     j += 1

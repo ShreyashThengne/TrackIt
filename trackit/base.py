@@ -1,5 +1,3 @@
-# this will be used for high level implementation using base
-
 from . import data
 from . import diffs
 import os, shutil
@@ -48,17 +46,6 @@ def get_all_branches():
             print("* " + branch)
         else:
             print("  " + branch)
-
-# def iter_commits_and_parents(o_id):
-#     commit = get_commit(o_id)
-#     p = commit.parent
-#     parents = []
-    
-#     while p:
-#         parents.append(p)
-#         commit = get_commit(p)
-#         p = commit.parent
-#     return parents
 
 
 def tag(tag_name, o_id):

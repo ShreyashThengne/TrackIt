@@ -69,6 +69,12 @@ def parse_args():
     diff_parser.add_argument("f_o_id", nargs='?')
     diff_parser.add_argument("t_o_id", default=data.get_ref('HEAD'), nargs='?')
 
+    merge_parser = commands.add_parser("merge")
+    merge_parser.set_defaults(func = merge)
+    merge_parser.add_argument("f_o_id", nargs='?')
+    merge_parser.add_argument("t_o_id", default=data.get_ref('HEAD'), nargs='?')
+    
+
     return parser.parse_args()
 
 def snapshot(arg):
@@ -122,6 +128,9 @@ def diff(args):
             return
         args.f_o_id = c.parent
     diffs.diff(args.f_o_id, args.t_o_id)
+
+def merge(args):
+    diffs.merge(args.f_o_id, args.t_o_id)
 
 def hash_object(arg):   # this is used to store the object and reference it with an o_id
     with open(arg.obj, 'rb') as f:
