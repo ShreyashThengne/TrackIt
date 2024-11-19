@@ -1,6 +1,7 @@
 from . import base
 from . import data
 import difflib
+import os
 
 def compare_snaps(s1, s2, path = "."):
     objects = {}
@@ -45,7 +46,7 @@ def diff(f, t):
     files = compare_snaps(f.tree, t.tree)
 
     for filename, o_ids in files.items():
-        
+        print(filename)
         if o_ids[0] == o_ids[1]: continue
         elif o_ids[0] and not o_ids[1]:
             print(f"{filename} was deleted!")
@@ -56,7 +57,6 @@ def diff(f, t):
             print("Changes in", filename)
             file1 = data.get_object(o_ids[0], expected='blob').decode().split("\r")
             file2 = data.get_object(o_ids[1], expected='blob').decode().split("\r")
-            print(file1, file2)
             d = difflib.unified_diff(file1, file2, lineterm='')
         
             for line in d:
@@ -65,36 +65,73 @@ def diff(f, t):
     
     return files
 
+
 def merge(f_o_id, t_o_id):
+    # merge branch to head
     f = base.get_commit(f_o_id)     # head file
     t = base.get_commit(t_o_id)     # branch file which is to be merged into head
     merged_snap = {}
     files = compare_snaps(f.tree, t.tree)
-
-    for filename, o_ids in files:
-        pass
-
-def merge_blobs(f, t):
-    f = data.get_object(f, expected='blob').decode().split("\r")
-    t = data.get_object(t, expected='blob').decode().split("\r")
     
-    d = difflib.unified_diff(f, t, lineterm='')[2:]
-    i = 0
-    while i < len(d):
-        if d[i].startswith('-'):
-            print("<<<<<<< HEAD")
-            while d[i].startswith('-'):
-                print(d[i][1:])
-                i += 1
-            while i < len(d) and d[i].startswith('+'):
-                print(d[i][1:])
-                i += 1
-            print(">>>>>>branch")
+    # writing the merged to current snapshot and creating a new one and committing it.
+    for filename, o_ids in files.items():
+        print(filename)
+        if o_ids[0] and o_ids[1]:
+            merged = merge_blobs(o_ids[0], o_ids[1])
+            print(merged)
+        elif o_ids[0]:
+            print("created")
+            with open(filename, 'w') as f:
+                f.write(data.get_object(o_ids[0], expected='blob').decode().split("\r"))
+
+        elif o_ids[1]:
+            print("deleted")
+            os.remove(filename)
+        print()
+
+    base.snapshot()
+    base.commit("Merge commit")
+
+
+def merge_blobs(branch, head):
+    branch = data.get_object(branch, expected='blob').decode().split("\r")
+    head = data.get_object(head, expected='blob').decode().split("\r")
+
+    diff = difflib.ndiff(head, branch)
+    # print('branch:', branch, '\nhead:', head)
+    # print('diff: ',list(diff))
+    # print('\n')
+    
+    flag1 = True
+    flag2 = True
+    output = []
+    conflict_occur = False
+
+    for d in diff:
+        if d.startswith('-'):   # conflict started
+            if flag1:
+                conflict_occur = True
+                output.append("<<<<<<< HEAD")
+                flag1 = False
+            output.append(d[2:])
+
+        elif d.startswith('+'):
+            if flag1 == False:   # if flag1 is false then it has entered the conflict block
+                if flag2:   # if flag2 is true then we are just starting out with the second part of conflict block
+                    output.append("=======")
+                    flag2 = False
+            output.append(d[2:])
+
         else:
-            print(d[i][1:])
-
-
-        # if f[i] != t[j]: # \n{t[j]}\n>>>>>>branch
-        #     res += f[i]
-        #     i += 1
-        #     j += 1
+            if flag1 == False:  # if the flag1 is false then we are still in confliuct block
+                if flag2:       # if the flag2 is True then we have not started the branch's conflict block
+                    output.append("=======")
+                output.append(">>>>>>> branch")
+                flag1 = True
+                flag2 = True
+                # we have ended the conflict block here
+            output.append(d[2:])
+    
+    # print("\n".join(output))
+    if conflict_occur: print("Conflict Occured!")
+    return output

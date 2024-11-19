@@ -48,8 +48,8 @@ def parse_args():
     tag_parser.add_argument('tag_name')
     tag_parser.add_argument('o_id', nargs='?')
 
-    k_parser = commands.add_parser ('status')
-    k_parser.set_defaults(func=status)
+    status_parser = commands.add_parser ('status')
+    status_parser.set_defaults(func=status)
 
     branch_parser = commands.add_parser('branch')
     branch_parser.set_defaults(func=branch)
@@ -102,7 +102,7 @@ def tag(args):
     base.tag(args.tag_name, args.o_id)
 
 def status(args):
-    base.status(args.o_id)
+    base.status()
 
 def branch(args):
     if not args.name and not args.o_id:
