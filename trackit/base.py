@@ -11,7 +11,7 @@ import collections
 
 def status():
     '''
-    This gets us the current branch we are on (latter on we will update it to even display the unstaged files).
+    Prints the current branch we are on (latter on we will update it to even display the unstaged files).
     '''
     if data.check_symbolic():
         print(f"On branch {os.path.split(data.get_head_branch())[1]}")
@@ -32,7 +32,7 @@ def reset(o_id):
 
 def show(o_id):
     '''
-    This gets us the current commit details and diffs between the commit and its parent commit.
+    Prints the current commit details and diffs between the commit and its parent commit.
     '''
     cmt = get_commit(o_id)
     print(f"commit {o_id}\nauthor: {cmt.author}\ndate: {cmt.time}\nmessage: {cmt.msg}\n")
@@ -45,7 +45,7 @@ def show(o_id):
 
 def get_all_branches():
     '''
-    This gets us the names of all branches, along with with what branch we are pointing to right now
+    Prints the names of all branches, along with with what branch we are pointing to right now
     '''
     head = None
     if data.check_symbolic():
@@ -65,8 +65,10 @@ def tag(tag_name, o_id):
     data.set_ref(os.path.join('refs', 'tags', tag_name), o_id)
 
 
-# this is used to checkout to a commit, again this only changes the head position, branch will not be affected
 def checkout(ref_name = None, o_id = None):
+    '''
+    To checkout to a commit. Again this only changes the head position, branch will be unaffected.
+    '''
     if ref_name:
         for ref, id in data.iter_refs():
             if os.path.split(ref)[-1] == ref_name:
@@ -202,7 +204,7 @@ def get_commit(o_id):
 
 def iter_commits_and_parents(oids):
     '''
-    Gets the commit as well as all of its parental commits.
+    Gets the commit as well as all of its parental commits. Yeilds commit ID.
     '''
 
     oids = collections.deque(oids)
