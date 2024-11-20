@@ -5,6 +5,9 @@ import zlib
 GIT_DIR = ".trackit"
 
 def init():
+    '''
+    Generates the required file directory structure for TrackIt.
+    '''
     os.makedirs(GIT_DIR, exist_ok=True)
     os.makedirs(f"{GIT_DIR}\objects", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs", exist_ok=True)
@@ -12,10 +15,11 @@ def init():
     os.makedirs(f"{GIT_DIR}\\refs\\tags", exist_ok=True)
     set_head(ref = 'refs\heads\main')
     
+
 def hash_object(content, obj_type="blob"):
     '''
-    hash the object content and store it in the .trackit/objects
-    output: o_id
+    Hash the object content and store it in the .trackit/objects.\n
+    Returns Object ID.
     '''
 
     # '\0' is used to divide the header with content. Again we then encode the header to binary
@@ -37,8 +41,8 @@ def hash_object(content, obj_type="blob"):
 
 def get_object(o_id, expected = 'blob'):
     '''
-    retrieves the object content withe reference to the object id
-    output: binary codec
+    Retrieves the object content with reference to the object id.\n
+    Returns Binary Codec.
     '''
     try:
         # we first get the file, then we decompress it and then get the header and content using '\0' as reference.
@@ -63,21 +67,36 @@ def get_object(o_id, expected = 'blob'):
         return None
     
 def set_head(ref = None, o_id = None):
+    '''
+    Set the head to a commit.
+    '''
     with open(os.path.join(GIT_DIR, 'HEAD'), 'w') as f:
         if ref:
             f.write(f"ref: {ref}")
         else:
             f.write(f"commit: {o_id}")
 
+
 def set_ref(ref, o_id):
+    '''
+    Set / Update the reference with to a commit.
+    '''
     with open(os.path.join(GIT_DIR, ref), 'w') as f:
         f.write(o_id)
 
 def get_head_branch():
+    '''
+    Gets the branch or commit ID to which the head is pointing to.\n
+    Use check_symbolic to know if head is detached or not.
+    '''
     with open(os.path.join(GIT_DIR, 'HEAD'), 'r') as f:
         return f.read().split(" ")[1]
 
+
 def get_ref(ref):
+    '''
+    Gets the commit ID of the reference.
+    '''
     path = os.path.join(GIT_DIR, ref)
 
     if ref == 'HEAD':
@@ -94,6 +113,10 @@ def get_ref(ref):
         return None
 
 def iter_refs():
+    '''
+    Gets all the references (Branches and Tags) present in the current TrackIt repository.\n
+    Returns ref, object id
+    '''
     refs = ['HEAD']
     # print('uhjwds',os.path.join(GIT_DIR, 'refs'))
     for root, dirs, files in os.walk(os.path.join(GIT_DIR, 'refs')):
@@ -104,6 +127,9 @@ def iter_refs():
         yield ref, get_ref(ref)
 
 def check_symbolic():
+    '''
+    Check if the current head is detached or not.\n
+    '''
     with open(os.path.join(GIT_DIR, 'HEAD'), 'r') as f:
         r = f.read()
         if r.split(" ")[0] == 'commit:':

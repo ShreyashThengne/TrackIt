@@ -4,6 +4,10 @@ import difflib
 import os
 
 def compare_snaps(s1, s2, path = "."):
+    '''
+    Gets the overall comparison of files in snap1 and snap2.\n
+    Returns {filename : {0: oid1, 1: oid2}}.
+    '''
     objects = {}
     for i, s in enumerate([s1, s2]):
         snap = data.get_object(s, expected='tree').decode().split("\n")
@@ -41,6 +45,9 @@ def compare_snaps(s1, s2, path = "."):
     return objects
 
 def diff(f, t):
+    '''
+    Prints the changes when going from commit f to commit t.
+    '''
     f = base.get_commit(f)
     t = base.get_commit(t)
     files = compare_snaps(f.tree, t.tree)
@@ -63,11 +70,15 @@ def diff(f, t):
                 print(line)
         print()
     
+    # just in case
     return files
 
 
 def merge(f_o_id, t_o_id):
-    # merge branch to head
+    '''
+    Merge commit f_o_id to commit t_o_id.\n
+    It will update the current snapshot to merged snapshot.
+    '''
     f = base.get_commit(f_o_id)     # head file
     t = base.get_commit(t_o_id)     # branch file which is to be merged into head
     merged_snap = {}
@@ -94,6 +105,10 @@ def merge(f_o_id, t_o_id):
 
 
 def merge_blobs(branch, head):
+    '''
+    Merges two files. If conflicts arises, then will be indicated.\n
+    Returns the merged file.
+    '''
     branch = data.get_object(branch, expected='blob').decode().split("\r")
     head = data.get_object(head, expected='blob').decode().split("\r")
 

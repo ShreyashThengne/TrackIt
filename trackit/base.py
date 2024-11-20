@@ -5,38 +5,48 @@ import zlib
 import datetime
 import collections
 
-def iter_commits_and_parents(oids):
-    oids = collections.deque(oids)
-    visited = set()
+# def delete_ref(name)->None:
+#     os.remove(os.path.join(data.GIT_DIR, 'refs', name))
 
-    while oids:
-        oid = oids.popleft()
-        if not oid or oid in visited:
-            continue
-        visited.add(oid)
-        yield oid
-
-        commit = get_commit(oid)
-        oids.appendleft(commit.parent)
 
 def status():
+    '''
+    This gets us the current branch we are on (latter on we will update it to even display the unstaged files).
+    '''
     if data.check_symbolic():
         print(f"On branch {os.path.split(data.get_head_branch())[1]}")
     else:
         print(f"HEAD detached at {data.get_ref('HEAD')}")
 
+
 def reset(o_id):
+    '''
+    This is different than checkout as in this case, the head as well as the branch would be set to a particular commit.
+    This is not the case with checkout as checkout will just point the head to a commit.
+    '''
     if data.check_symbolic():
         data.set_ref(data.get_head_branch(), o_id)
     else:
         data.set_head(o_id=o_id)
 
+
 def show(o_id):
+    '''
+    This gets us the current commit details and diffs between the commit and its parent commit.
+    '''
     cmt = get_commit(o_id)
     print(f"commit {o_id}\nauthor: {cmt.author}\ndate: {cmt.time}\nmessage: {cmt.msg}\n")
-    diffs.diff(cmt.parent, o_id)  # from, to
+    p = cmt.parents
+    if p: p = p[0]
+    else: p = None
+
+    diffs.diff(cmt.parents[0], o_id)  # from, to
+
 
 def get_all_branches():
+    '''
+    This gets us the names of all branches, along with with what branch we are pointing to right now
+    '''
     head = None
     if data.check_symbolic():
         head = os.path.split(data.get_head_branch())[-1]
@@ -49,8 +59,13 @@ def get_all_branches():
 
 
 def tag(tag_name, o_id):
+    '''
+    This is used to tag a commit
+    '''
     data.set_ref(os.path.join('refs', 'tags', tag_name), o_id)
 
+
+# this is used to checkout to a commit, again this only changes the head position, branch will not be affected
 def checkout(ref_name = None, o_id = None):
     if ref_name:
         for ref, id in data.iter_refs():
@@ -76,9 +91,16 @@ def checkout(ref_name = None, o_id = None):
     data.set_head(o_id = o_id)
 
 def branch(name, o_id):
+    '''
+    Creates a branch.
+    '''
     data.set_ref(os.path.join('refs', 'heads', name), o_id)
 
+
 def log_(o_id = None, ref_name = None):
+    '''
+    Prints the chain of commits wrt current commit (it and all its parent commits).
+    '''
     if not o_id:
         if ref_name:
             o_id = data.get_ref(f'refs\\tags\\{ref_name}')
@@ -107,14 +129,20 @@ def log_(o_id = None, ref_name = None):
 
 
 class Commit:
-    def __init__(self, tree, author, time, msg, parent = None, tag = None):
+    def __init__(self, tree, author, time, msg, parents = None):
         self.tree = tree
-        self.parent = parent
+        self.parents = parents
         self.author = author
         self.time = time
         self.msg = msg
 
+
 def commit(msg = "No message left"):
+    '''
+    Creates a commit.
+    Returns the object id of commit.
+    '''
+
     commit = f"tree {snapshot()}\n"
 
     head = data.get_ref('HEAD')                                 # retrieve the parent commit of this
@@ -134,27 +162,68 @@ def commit(msg = "No message left"):
     return o_id
 
 def get_commit(o_id):
-    commit = data.get_object(o_id, 'commit').decode().splitlines()
+    '''
+    Returns the commit wrt to a particular commit id.
+    '''
 
-    if len(commit) > 4:
-        return Commit(
-            commit[0].split(" ", 1)[1],
-            commit[2].split(" ", 1)[1],
-            commit[3].split(" ", 1)[1],
-            commit[4].split(" ", 1)[1],
-            commit[1].split(" ", 1)[1]
-        )
-    
+    commit = iter(data.get_object(o_id, 'commit').decode().splitlines())
+    attr = {'parents':[]}
+    for c in commit:
+        x = c.split(" ", 1)
+        if x[0] == 'parent':
+            attr['parents'].append(x[1])
+        else:
+            attr[x[0]] = x[1]
+
     return Commit(
-        commit[0].split(" ", 1)[1],
-        commit[1].split(" ", 1)[1],
-        commit[2].split(" ", 1)[1],
-        commit[3].split(" ", 1)[1]
+        tree = attr['tree'],
+        author = attr['author'],
+        time = attr['time'],
+        msg = attr['message'],
+        parents = attr['parents'],
     )
+
+    # if len(commit) > 4:
+    #     return Commit(
+    #         commit[0].split(" ", 1)[1],
+    #         commit[2].split(" ", 1)[1],
+    #         commit[3].split(" ", 1)[1],
+    #         commit[4].split(" ", 1)[1],
+    #         commit[1].split(" ", 1)[1]
+    #     )
+    
+    # return Commit(
+    #     commit[0].split(" ", 1)[1],
+    #     commit[1].split(" ", 1)[1],
+    #     commit[2].split(" ", 1)[1],
+    #     commit[3].split(" ", 1)[1]
+    # )
+
+
+def iter_commits_and_parents(oids):
+    '''
+    Gets the commit as well as all of its parental commits.
+    '''
+
+    oids = collections.deque(oids)
+    visited = set()
+
+    while oids:
+        oid = oids.popleft()
+        if not oid or oid in visited:
+            continue
+        visited.add(oid)
+        yield oid
+
+        commit = get_commit(oid)
+        oids.extendleft(commit.parent[:1])
+        oids.extend(commit.parent[1:])
 
 
 def snapshot(directory = "."):
-    # at the end you simply want to get the object id of this directory
+    '''
+    Creates a snapshot for the current directory structure and get the object id of this directory.
+    '''
     entries = []
     ignore = set()
     if os.path.exists(".trackitignore"):
@@ -182,6 +251,9 @@ def snapshot(directory = "."):
     return data.hash_object(tree.encode(), 'tree')
 
 def read_snapshot(o_id, base_path = '.'):
+    '''
+    Writes the current file structure as per the snapshot.
+    '''
     obj_path = os.path.join(data.GIT_DIR, 'objects', o_id[:2], o_id[2:])
 
     with open(obj_path, 'rb') as f:
