@@ -2,6 +2,24 @@ import os
 import hashlib
 import zlib
 
+"""
+TrackIt - A simple version control system.
+This module provides the core functionalities for TrackIt, a basic version control system inspired by Git. It includes functions to initialize a repository, hash and store objects, retrieve objects, manage references, and handle the HEAD pointer.
+Functions:
+- init(): Generates the required file directory structure for TrackIt.
+- hash_object(content, obj_type="blob"): Hashes the object content and stores it in the .trackit/objects directory. Returns the object ID.
+- get_object(o_id, expected='blob'): Retrieves the object content using the object ID. Returns the content in binary format.
+- set_head(ref=None, o_id=None): Sets the HEAD to a specific reference or commit ID.
+- get_head_branch(): Gets the branch or commit ID to which the HEAD is pointing.
+- set_ref(ref, o_id): Sets or updates a reference to a specific commit ID.
+- get_ref(ref): Gets the commit ID of a reference.
+- iter_refs(): Iterates over all references (branches and tags) in the current TrackIt repository. Yields ref and object ID.
+- check_symbolic(): Checks if the current HEAD is detached.
+Constants:
+- GIT_DIR: The directory name for TrackIt repository metadata.
+"""
+
+
 GIT_DIR = ".trackit"
 
 def init():
@@ -9,9 +27,9 @@ def init():
     Generates the required file directory structure for TrackIt.
     '''
     os.makedirs(GIT_DIR, exist_ok=True)
-    os.makedirs(f"{GIT_DIR}\objects", exist_ok=True)
+    os.makedirs(f"{GIT_DIR}\\objects", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs", exist_ok=True)
-    os.makedirs(f"{GIT_DIR}\\refs\heads", exist_ok=True)
+    os.makedirs(f"{GIT_DIR}\\refs\\heads", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs\\tags", exist_ok=True)
     set_head(ref = 'refs\heads\main')
     
@@ -49,7 +67,7 @@ def get_object(o_id, expected = 'blob'):
         # now we decode the header to original format
 
         obj_path = os.path.join(GIT_DIR, 'objects', o_id[:2], o_id[2:])
-        # print(obj_path)
+        
         with open(obj_path, 'rb') as f:
             r = f.read()
         
@@ -76,14 +94,6 @@ def set_head(ref = None, o_id = None):
         else:
             f.write(f"commit: {o_id}")
 
-
-def set_ref(ref, o_id):
-    '''
-    Set / Update the reference with to a commit.
-    '''
-    with open(os.path.join(GIT_DIR, ref), 'w') as f:
-        f.write(o_id)
-
 def get_head_branch():
     '''
     Gets the branch or commit ID to which the head is pointing to.\n
@@ -92,6 +102,12 @@ def get_head_branch():
     with open(os.path.join(GIT_DIR, 'HEAD'), 'r') as f:
         return f.read().split(" ")[1]
 
+def set_ref(ref, o_id):
+    '''
+    Set / Update the reference with to a commit.
+    '''
+    with open(os.path.join(GIT_DIR, ref), 'w') as f:
+        f.write(o_id)
 
 def get_ref(ref):
     '''
@@ -117,8 +133,8 @@ def iter_refs():
     Gets all the references (Branches and Tags) present in the current TrackIt repository.\n
     Returns ref, object id
     '''
-    refs = ['HEAD']
-    # print('uhjwds',os.path.join(GIT_DIR, 'refs'))
+    refs = ['HEAD', 'MERGE_HEAD']
+
     for root, dirs, files in os.walk(os.path.join(GIT_DIR, 'refs')):
         root = os.path.relpath(root, GIT_DIR)                   # this is done in order to remove GIT_DIR part from the path
         refs.extend([os.path.join(root, i) for i in files])

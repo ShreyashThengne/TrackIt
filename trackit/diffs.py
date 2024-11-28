@@ -2,47 +2,51 @@ from . import base
 from . import data
 import difflib
 import os
+from collections import defaultdict
+
+"""
+This module provides various functions to perform diff and merging
+Functions:
+    compare_snaps(s1, s2, path="."):
+        Gets the overall comparison of files in snap1 and snap2.
+    diff(f, t):
+        Prints the changes when going from commit f to commit t.
+    merge_snaps(f, t):
+        Merge commit f_o_id to commit t_o_id.
+    merge_blobs(branch, head):
+        Merges two files. If conflicts arise, then will be indicated.
+"""
+
 
 def compare_snaps(s1, s2, path = "."):
     '''
     Gets the overall comparison of files in snap1 and snap2.\n
     Returns {filename : {0: oid1, 1: oid2}}.
     '''
-    objects = {}
+    objects = defaultdict(lambda: [None, None])
+    snaps = defaultdict(lambda: [None, None])
+
     for i, s in enumerate([s1, s2]):
-        snap = data.get_object(s, expected='tree').decode().split("\n")
+        snap = data.get_object(s, expected='snap').decode().split("\n")
         for obj in snap[:-1]:
             o = obj.split(" ", 2)
             type = o[0]
-
             o_id = o[1]
-            if type == 'tree':
+            if type == 'snap':
                 sub_path = f"{path}\{o[2]}"
-                sub_objects = compare_snaps(o_id, o_id, sub_path)
+                snaps[sub_path][i] = o_id
+                sub_objects, sub_snaps = compare_snaps(o_id, o_id, sub_path)
 
                 for sub_name, sub_obj in sub_objects.items():
-                    if objects.get(sub_name):
-                        objects[sub_name][i] = sub_obj[i]
-                    else:
-                        objects[sub_name] = sub_obj
-                        if i == 0:
-                            objects[sub_name][1] = None
-                        else:
-                            objects[sub_name][0] = None
+                    objects[sub_name][i] = sub_obj[i]
+                for sub_name, sub_snap in sub_snaps.items():
+                    objects[sub_snap][i] = sub_obj[i]
                 continue
 
             name = f"{path}\{o[2]}"
-
-            if objects.get(name):
-                objects[name][i] = o_id
-            else:
-                objects[name] = {i:o_id}
-                if i == 0:
-                    objects[name][1] = None
-                else:
-                    objects[name][0] = None
+            objects[name][i] = o_id
         
-    return objects
+    return objects, snaps
 
 def diff(f, t):
     '''
@@ -50,7 +54,7 @@ def diff(f, t):
     '''
     f = base.get_commit(f)
     t = base.get_commit(t)
-    files = compare_snaps(f.tree, t.tree)
+    files, snaps = compare_snaps(f.snap, t.snap)
 
     for filename, o_ids in files.items():
         print(filename)
@@ -69,39 +73,55 @@ def diff(f, t):
             for line in d:
                 print(line)
         print()
+
+    for snap, o_ids in snaps.items():
+        # print(snap)
+        if o_ids[0] and not o_ids[1]:
+            print(f"{snap} was deleted!")
+        elif not o_ids[0] and o_ids[1]:
+            print(f"{snap} was created!")
+        print()
     
     # just in case
     return files
 
 
-def merge(f_o_id, t_o_id):
+def merge_snaps(f, t):
     '''
-    Merge commit f_o_id to commit t_o_id.\n
-    It will update the current snapshot to merged snapshot.
+    Merge commit other snapshot to head snapshot.\n
+    It will update the current snapshot to merged snapshot.\n
+    Parameters: branch, head
     '''
-    f = base.get_commit(f_o_id)     # head file
-    t = base.get_commit(t_o_id)     # branch file which is to be merged into head
-    merged_snap = {}
-    files = compare_snaps(f.tree, t.tree)
+
+    files, snaps = compare_snaps(f, t)
     
     # writing the merged to current snapshot and creating a new one and committing it.
+    for snap, o_ids in snaps.items():
+        # print(filename)
+        if o_ids[0] and not o_ids[1]:
+            os.makedirs(snap, exist_ok=True)
+            print(f"{snap} was created!")
+        elif not o_ids[0] and o_ids[1]:
+            if os.path.exists(snap):
+                os.rmdir(snap)
+                print(f"{snap} was deleted!")
+
     for filename, o_ids in files.items():
         print(filename)
         if o_ids[0] and o_ids[1]:
             merged = merge_blobs(o_ids[0], o_ids[1])
             print(merged)
+            with open(filename, 'w') as f:
+                f.write("\n".join(merged))
         elif o_ids[0]:
             print("created")
             with open(filename, 'w') as f:
-                f.write(data.get_object(o_ids[0], expected='blob').decode().split("\r"))
+                f.write(data.get_object(o_ids[0], expected='blob').decode())
 
         elif o_ids[1]:
             print("deleted")
             os.remove(filename)
         print()
-
-    base.snapshot()
-    base.commit("Merge commit")
 
 
 def merge_blobs(branch, head):
@@ -113,9 +133,6 @@ def merge_blobs(branch, head):
     head = data.get_object(head, expected='blob').decode().split("\r")
 
     diff = difflib.ndiff(head, branch)
-    # print('branch:', branch, '\nhead:', head)
-    # print('diff: ',list(diff))
-    # print('\n')
     
     flag1 = True
     flag2 = True
@@ -146,7 +163,13 @@ def merge_blobs(branch, head):
                 flag2 = True
                 # we have ended the conflict block here
             output.append(d[2:])
-    
-    # print("\n".join(output))
+    # just in case if there are no items in the list, we need to close the conflict
+    if flag1 == False:
+        if flag2:
+            output.append("=======")
+        output.append(">>>>>>> branch")
+        flag1 = True
+        flag2 = True
+
     if conflict_occur: print("Conflict Occured!")
     return output
