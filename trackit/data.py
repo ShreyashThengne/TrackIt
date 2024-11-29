@@ -1,10 +1,5 @@
-import os
-import hashlib
-import zlib
-
 """
-TrackIt - A simple version control system.
-This module provides the core functionalities for TrackIt, a basic version control system inspired by Git. It includes functions to initialize a repository, hash and store objects, retrieve objects, manage references, and handle the HEAD pointer.
+This module provides the core data-level functionalities for TrackIt, a basic version control system inspired by Git. It includes functions to initialize a repository, hash and store objects, retrieve objects, manage references, and handle the HEAD pointer.
 Functions:
 - init(): Generates the required file directory structure for TrackIt.
 - hash_object(content, obj_type="blob"): Hashes the object content and stores it in the .trackit/objects directory. Returns the object ID.
@@ -18,6 +13,11 @@ Functions:
 Constants:
 - GIT_DIR: The directory name for TrackIt repository metadata.
 """
+
+
+import os
+import hashlib
+import zlib
 
 
 GIT_DIR = ".trackit"

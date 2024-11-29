@@ -1,10 +1,3 @@
-from . import data
-from . import diffs
-import os, shutil
-import zlib
-import datetime
-import collections
-
 """
 This module provides various functions and classes to manage a version control system similar to Git.
 It includes functionalities for creating commits, branches, tags, merging branches, and more.
@@ -46,6 +39,14 @@ Classes:
     Commit:
         Represents a commit object with attributes like snapshot, author, time, message, and parents.
 """
+
+
+from . import data
+from . import diffs
+import os, shutil
+import zlib
+import datetime
+import collections
 
 
 def get_merge_base(o1, o2):

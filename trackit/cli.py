@@ -1,9 +1,3 @@
-import argparse
-from . import data
-from . import base
-from . import diffs
-import os, sys
-
 """
 This module provides a command-line interface (CLI) for the Trackit version control system. It uses the argparse library to parse command-line arguments and execute corresponding functions. The module supports various commands such as initializing a repository, committing changes, creating branches, tagging, and more.
 Functions:
@@ -26,6 +20,12 @@ Functions:
 - read_object(arg): Retrieves the content of an object using its hash.
 The main() function is the entry point of the CLI, which parses the arguments and calls the appropriate function based on the command provided.
 """
+
+import argparse
+from . import data
+from . import base
+from . import diffs
+import os, sys
 
 
 def init(args):

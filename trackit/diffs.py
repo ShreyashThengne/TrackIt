@@ -1,9 +1,3 @@
-from . import base
-from . import data
-import difflib
-import os
-from collections import defaultdict
-
 """
 This module provides various functions to perform diff and merging
 Functions:
@@ -16,6 +10,13 @@ Functions:
     merge_blobs(branch, head):
         Merges two files. If conflicts arise, then will be indicated.
 """
+
+
+from . import base
+from . import data
+import difflib
+import os
+from collections import defaultdict
 
 
 def compare_snaps(s1, s2, path = "."):
