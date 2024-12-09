@@ -83,7 +83,7 @@ To find the common ancestor of two commits, run:
 trackit merge-base <commit_id1> <commit_id2>
 ```
 
-View Status of current branch\
+Status\
 View the status, run:
 ```sh
 trackit status
