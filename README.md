@@ -2,15 +2,25 @@
 
 TrackIt is a basic version control system inspired by Git. It provides functionalities for creating commits, branches, tags, merging branches, and more.
 
+I have published this package on PyPIP. Here's the link: https://pypi.org/project/trackit-vcs/
+
 ## Installation
 
+Using PIP:
+```sh
+pip install trackit-vcs
+```
+
+or 
+
+Clone it at a desired directory. Open a terminal in that directory.\
 To install this package, run:
 
 ```sh
 pip install .
 ```
 
-Usage\
+## Usage
 TrackIt provides a command-line interface (CLI) for interacting with the version control system. Below are some of the commands you can use:
 
 Initialize a Repository\
