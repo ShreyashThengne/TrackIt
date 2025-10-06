@@ -43,9 +43,13 @@ To display the commit log, run:
 trackit log
 ```
 Checkout a Commit or Reference\
-To checkout a specific commit or reference, run:
+To checkout a specific commit, run:
 ```sh
 trackit checkout <commit_id_or_ref>
+```
+or reference(tag or branch), run:
+```sh
+trackit checkout -r <ref>
 ```
 Create a Branch
 To create a new branch, run:
@@ -87,6 +91,12 @@ Status\
 View the status, run:
 ```sh
 trackit status
+```
+
+Reset\
+To reset the repository to a specific commit, run:
+```sh
+trackit reset <commit_id>
 ```
 
 Find Common Ancestor of Two Commits
