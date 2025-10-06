@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+trackit_vcs/base.py
+trackit_vcs/cli.py
+trackit_vcs/data.py
+trackit_vcs/diffs.py
+trackit_vcs.egg-info/PKG-INFO
+trackit_vcs.egg-info/SOURCES.txt
+trackit_vcs.egg-info/dependency_links.txt
+trackit_vcs.egg-info/entry_points.txt
+trackit_vcs.egg-info/top_level.txt

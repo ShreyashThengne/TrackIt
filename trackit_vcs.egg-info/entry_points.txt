@@ -1,0 +1,2 @@
+[console_scripts]
+trackit = trackit_vcs.cli:main
