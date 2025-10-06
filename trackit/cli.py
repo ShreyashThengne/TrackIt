@@ -30,7 +30,7 @@ import os, sys
 
 def init(args):
     data.init()
-    print(f"Initialised an empty trackit repository at {os.getcwd()}\{data.GIT_DIR}.")
+    print(f"Initialised an empty trackit repository at {os.getcwd()}\\{data.GIT_DIR}.")
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -161,10 +161,12 @@ def show(args):
 def diff(args):
     if not args.f_o_id:
         c = base.get_commit(args.t_o_id)
-        if not c.parent:
+        
+        # Assuming c.parents is a list of parent commit ids
+        if not hasattr(c, 'parents') or not c.parents:
             print("This commit does not have any parent!")
             return
-        args.f_o_id = c.parent
+        args.f_o_id = c.parents[0]
     diffs.diff(args.f_o_id, args.t_o_id)
 
 def merge(args):

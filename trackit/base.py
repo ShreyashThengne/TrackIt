@@ -122,10 +122,12 @@ def show(o_id):
     cmt = get_commit(o_id)
     print(f"commit {o_id}\nauthor: {cmt.author}\ndate: {cmt.time}\nmessage: {cmt.msg}\n")
     p = cmt.parents
-    if p: p = p[0]
-    else: p = None
-
-    diffs.diff(cmt.parents[0], o_id)  # from, to
+    # diffs.diff(cmt.parents[0], o_id)  # from, to
+    
+    if p:
+        diffs.diff(p[0], o_id)
+    else:
+        print("This is the initial commit - no parent to compare with.")
 
 
 def get_all_branches():

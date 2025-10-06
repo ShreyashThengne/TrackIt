@@ -31,7 +31,7 @@ def init():
     os.makedirs(f"{GIT_DIR}\\refs", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs\\heads", exist_ok=True)
     os.makedirs(f"{GIT_DIR}\\refs\\tags", exist_ok=True)
-    set_head(ref = 'refs\heads\main')
+    set_head(ref = 'refs\\heads\\main')
     
 
 def hash_object(content, obj_type="blob"):
@@ -77,7 +77,7 @@ def get_object(o_id, expected = 'blob'):
 
         if expected:
             if expected != content_type: return f'Expected {expected}, got {content_type}'
-
+        # print(content)
         return content
     
     except FileNotFoundError:

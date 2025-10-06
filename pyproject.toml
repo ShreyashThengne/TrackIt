@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trackit"
+authors = [
+    {name = "Shreyash Thengne", email = "shreyashthengne@gmail.com"}
+]
+version = "1.0.0"
+description = "TrackIt is a basic version control system inspired by Git. It provides functionalities for creating commits, branches, tags, merging branches, and more."
+readme = "README.md"
+requires-python = ">=3.12"
+keywords = ["version control", "personal version control", "git", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Version Control"
+]
+dependencies = [
+]
+
+[project.urls]
+Homepage = "https://github.com/ShreyashThengne/trackIt"
+Repository = "https://github.com/ShreyashThengne/trackIt"
+Issues = "https://github.com/ShreyashThengne/trackIt/issues"
+
+[project.scripts]
+trackit = "trackit.cli:main"
+
+[tool.setuptools]
+packages = ["trackit"]
